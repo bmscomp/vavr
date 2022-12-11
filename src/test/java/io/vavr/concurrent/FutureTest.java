@@ -52,7 +52,9 @@ public class FutureTest extends AbstractValueTest {
 
     static final Executor TRIVIAL_EXECUTOR = Runnable::run;
 
-    private static final Executor REJECTING_EXECUTOR = ignored -> { throw new RejectedExecutionException(); };
+    private static final Executor REJECTING_EXECUTOR = ignored -> {
+        throw new RejectedExecutionException();
+    };
 
     @AfterClass
     public static void gracefullyFinishThreads() throws TimeoutException {
@@ -66,13 +68,16 @@ public class FutureTest extends AbstractValueTest {
             printInfo("[STARTING]", desc);
             printForkJoinPoolInfo();
         }
+
         @Override
         protected void finished(Description desc) {
             printInfo("[FINISHED]", desc);
         }
+
         private void printInfo(String prefix, Description desc) {
             System.out.println(String.format("%s %s %s", prefix, LocalDateTime.now(), desc.getDisplayName()));
         }
+
         private void printForkJoinPoolInfo() {
             final ForkJoinPool pool = ForkJoinPool.commonPool();
             final String info = String.format("- [ForkJoinPool.commonPool()] parallelism: %s, poolSize: %s, isAsyncMode: %s, runningThreadCount: %s, activeThreadCount: %s, isQuiescent: %s, stealCount: %s, queuedTaskCount: %s, queuedSubmissionCount: %s, hasQueuedSubmissions: %s",
@@ -98,7 +103,7 @@ public class FutureTest extends AbstractValueTest {
             @Override
             public IterableAssert<T> isEqualTo(Object expected) {
                 if (actual instanceof Future && expected instanceof Future) {
-                    assertThat(((Future<T>) actual).getValue()).isEqualTo(((Future<T>) expected).getValue());
+                    FutureTest.this.assertThat(((Future<T>) actual).getValue()).isEqualTo(((Future<T>) expected).getValue());
                     return this;
                 } else {
                     return super.isEqualTo(expected);
@@ -212,7 +217,7 @@ public class FutureTest extends AbstractValueTest {
 
     @Test
     public void shouldCreateFutureFromLateFailingJavaCompletableFuture() {
-        final CompletableFuture<Integer> jFuture = Future.<Integer> of(zZz(new RuntimeException())).toCompletableFuture();
+        final CompletableFuture<Integer> jFuture = Future.<Integer>of(zZz(new RuntimeException())).toCompletableFuture();
         final Future<Integer> future = Future.fromCompletableFuture(jFuture).await();
         assertFailed(future, RuntimeException.class);
     }
@@ -253,7 +258,7 @@ public class FutureTest extends AbstractValueTest {
     @Test
     public void shouldFindOneSucceedingFutureWhenAllOthersFailUsingDefaultExecutor() {
         final Seq<Future<Integer>> futures = Stream.from(1)
-                .map(i -> Future.<Integer> of(() -> {
+                .map(i -> Future.<Integer>of(() -> {
                     throw new Error();
                 }))
                 .take(12)
@@ -266,7 +271,7 @@ public class FutureTest extends AbstractValueTest {
     @Test
     public void shouldFindNoneWhenAllFuturesFailUsingForkJoinPool() {
         final Seq<Future<Integer>> futures = Stream.from(1)
-                .map(i -> Future.<Integer> of(() -> {
+                .map(i -> Future.<Integer>of(() -> {
                     throw new Error(String.valueOf(i));
                 }))
                 .take(20);
@@ -296,7 +301,9 @@ public class FutureTest extends AbstractValueTest {
 
     @Test
     public void shouldCreateFailFutureFromTry() {
-        final Future<Integer> future = Future.fromTry(Try.of(() -> { throw new Error(); }));
+        final Future<Integer> future = Future.fromTry(Try.of(() -> {
+            throw new Error();
+        }));
         future.await();
         assertThat(future.isFailure()).isTrue();
     }
@@ -421,7 +428,7 @@ public class FutureTest extends AbstractValueTest {
 
     @Test
     public void shouldCreateAndCompleteAFutureUsingTrivialExecutorServiceAndRunnable() {
-        final int[] sideEffect = new int[] { 0 };
+        final int[] sideEffect = new int[]{0};
         final Future<Void> future = Future.runRunnable(TRIVIAL_EXECUTOR, () -> sideEffect[0] = 42);
         assertThat(future.executor()).isSameAs(TRIVIAL_EXECUTOR);
         future.await();
@@ -430,7 +437,8 @@ public class FutureTest extends AbstractValueTest {
 
     @Test(expected = NullPointerException.class)
     public void shouldThrowNPEWhenExecutorIsNullUsingRunnable() {
-        Future.runRunnable(null, () -> {});
+        Future.runRunnable(null, () -> {
+        });
     }
 
     @Test(expected = NullPointerException.class)
@@ -440,7 +448,7 @@ public class FutureTest extends AbstractValueTest {
 
     @Test
     public void shouldCreateAndCompleteAFutureUsingDefaultExecutorServiceAndRunnable() {
-        final int[] sideEffect = new int[] { 0 };
+        final int[] sideEffect = new int[]{0};
         final Future<Void> future = Future.runRunnable(() -> sideEffect[0] = 42);
         assertThat(future.executor()).isSameAs(Future.DEFAULT_EXECUTOR);
         future.await();
@@ -456,7 +464,7 @@ public class FutureTest extends AbstractValueTest {
 
     @Test(expected = NoSuchElementException.class)
     public void shouldFailReduceEmptySequence() {
-        Future.<Integer> reduce(List.empty(), (i1, i2) -> i1 + i2);
+        Future.<Integer>reduce(List.empty(), (i1, i2) -> i1 + i2);
     }
 
     @Test
@@ -481,7 +489,7 @@ public class FutureTest extends AbstractValueTest {
 
     @Test
     public void shouldCompleteRunnable() {
-        final int[] sideEffect = new int[] { 0 };
+        final int[] sideEffect = new int[]{0};
         Future.run(() -> sideEffect[0] = 42).await();
         assertThat(sideEffect[0]).isEqualTo(42);
     }
@@ -527,7 +535,7 @@ public class FutureTest extends AbstractValueTest {
     @SuppressWarnings("ResultOfMethodCallIgnored")
     @Test
     public void shouldCompleteWithErrorIfFailAndThenFail() {
-        final Future<Integer> future = Future.<Integer> of(zZz(new Error("fail!")))
+        final Future<Integer> future = Future.<Integer>of(zZz(new Error("fail!")))
                 .andThen(t -> zZz(new Error("and then fail!"))).await();
         assertFailed(future, Error.class);
     }
@@ -542,7 +550,7 @@ public class FutureTest extends AbstractValueTest {
 
     @Test
     public void shouldCompleteWithSpecificOrderIfSuccessAndThenSuccess() {
-        final int[] sideEffect = new int[] { 0 };
+        final int[] sideEffect = new int[]{0};
         final Future<Void> future = Future.run(() -> Thread.sleep(250)).andThen(t -> sideEffect[0] = 42);
         assertThat(future.isCompleted()).isFalse();
         assertThat(sideEffect[0]).isEqualTo(0);
@@ -608,11 +616,13 @@ public class FutureTest extends AbstractValueTest {
         assertThat(future.getCause().get()).isInstanceOf(TimeoutException.class);
         assertThat(future.getCause().get().getMessage()).isEqualTo("timeout after 100 milliseconds");
     }
-    
+
     @Test
     public void shouldHandleInterruptedExceptionCorrectlyInAwait() {
         // the Future should never be completed as long as the InterruptedException is rethrown by the Try...
-        final Future<Void> future = Future.run(() -> { throw new InterruptedException(); });
+        final Future<Void> future = Future.run(() -> {
+            throw new InterruptedException();
+        });
         // ...therefore the timeout will occur
         future.await(100, TimeUnit.MILLISECONDS);
         assertThat(future.isFailure()).isTrue();
@@ -690,8 +700,8 @@ public class FutureTest extends AbstractValueTest {
 
     @Test
     public void shouldFoldNonEmptyIterableOfFailingFutures() {
-        final Seq<Future<Integer>> futures = Stream.from(1).map(i -> Future.<Integer> of(zZz(new Error()))).take(5);
-        final Future<Integer> testee = Future.fold(futures, 0, (a, b) -> a + b).await();
+        final Seq<Future<Integer>> futures = Stream.from(1).map(i -> Future.<Integer>of(zZz(new Error()))).take(5);
+        final Future<Integer> testee = Future.fold(futures, 0, Integer::sum).await();
         assertFailed(testee, Error.class);
     }
 
@@ -735,8 +745,7 @@ public class FutureTest extends AbstractValueTest {
 
     @Test
     public void shouldCancelFutureThatNeverCompletes() {
-        @SuppressWarnings("deprecation")
-        final Future<?> future = Future.run(complete -> {
+        @SuppressWarnings("deprecation") final Future<?> future = Future.run(complete -> {
             // we break our promise, the Future is never completed
         });
 
@@ -751,22 +760,22 @@ public class FutureTest extends AbstractValueTest {
 
     @Test
     public void shouldCollectDefinedValueUsingPartialFunction() {
-        final PartialFunction<Integer, String> pf = Function1.<Integer, String> of(String::valueOf).partial(i -> i % 2 == 1);
+        final PartialFunction<Integer, String> pf = Function1.<Integer, String>of(String::valueOf).partial(i -> i % 2 == 1);
         final Future<String> future = Future.of(zZz(3)).collect(pf).await();
         assertThat(future.getValue().get()).isEqualTo(Try.success("3"));
     }
 
     @Test
     public void shouldFilterNotDefinedValueUsingPartialFunction() {
-        final PartialFunction<Integer, String> pf = Function1.<Integer, String> of(String::valueOf).partial(i -> i % 2 == 1);
+        final PartialFunction<Integer, String> pf = Function1.<Integer, String>of(String::valueOf).partial(i -> i % 2 == 1);
         final Future<String> future = Future.of(zZz(2)).collect(pf).await();
         assertThat(future.getValue().get().isFailure()).isTrue();
     }
 
     @Test
     public void shouldCollectEmptyFutureUsingPartialFunction() {
-        final PartialFunction<Integer, String> pf = Function1.<Integer, String> of(String::valueOf).partial(i -> i % 2 == 1);
-        final Future<String> future = Future.<Integer> of(zZz(new Error())).collect(pf).await();
+        final PartialFunction<Integer, String> pf = Function1.<Integer, String>of(String::valueOf).partial(i -> i % 2 == 1);
+        final Future<String> future = Future.<Integer>of(zZz(new Error())).collect(pf).await();
         assertThat(future.getValue().get().isFailure()).isTrue();
     }
 
@@ -886,7 +895,7 @@ public class FutureTest extends AbstractValueTest {
     public void shouldBeFailed() {
         assertThat(Future.failed(new Exception()).isFailure()).isTrue();
     }
-    
+
     // -- onComplete()
 
     @Test
@@ -896,8 +905,7 @@ public class FutureTest extends AbstractValueTest {
         final AtomicReference<Task.Complete<Boolean>> computation = new AtomicReference<>(null);
 
         // this computation never ends
-        @SuppressWarnings("deprecation")
-        final Future<Boolean> future = Future.run(computation::set);
+        @SuppressWarnings("deprecation") final Future<Boolean> future = Future.run(computation::set);
 
         // now we have time to register an onComplete handler
         future.onComplete(result -> result.forEach(ok::set));
@@ -912,7 +920,7 @@ public class FutureTest extends AbstractValueTest {
 
     @Test
     public void shouldPerformActionAfterFutureCompleted() {
-        final int[] actual = new int[] { -1 };
+        final int[] actual = new int[]{-1};
         final Future<Integer> future = Future.of(TRIVIAL_EXECUTOR, () -> 1);
         assertCompleted(future, 1);
         assertThat(actual[0]).isEqualTo(-1);
@@ -925,7 +933,7 @@ public class FutureTest extends AbstractValueTest {
     @Test
     public void shouldDoActionOnFailure() {
         final Future<?> future = Future.of(zZz(new Error()));
-        final Throwable[] holder = new Throwable[] { null };
+        final Throwable[] holder = new Throwable[]{null};
         future.onFailure(t -> holder[0] = t);
         waitUntil(() -> holder[0] != null);
         assertThat(holder[0].getClass()).isEqualTo(Error.class);
@@ -936,7 +944,7 @@ public class FutureTest extends AbstractValueTest {
     @Test
     public void shouldDoActionOnSuccess() {
         final Future<Integer> future = Future.of(zZz(42));
-        final int[] holder = new int[] { 0 };
+        final int[] holder = new int[]{0};
         future.onSuccess(i -> holder[0] = i);
         waitUntil(() -> holder[0] > 0);
         assertThat(holder[0]).isEqualTo(42);
@@ -946,7 +954,7 @@ public class FutureTest extends AbstractValueTest {
 
     @Test
     public void shouldRecoverFailedFuture() {
-        final Future<Integer> recovered = Future.<Integer> of(zZz(new Error())).recover(t -> 42);
+        final Future<Integer> recovered = Future.<Integer>of(zZz(new Error())).recover(t -> 42);
         waitUntil(recovered::isCompleted);
         assertThat(recovered.isSuccess()).isTrue();
         assertThat(recovered.get()).isEqualTo(42);
@@ -954,7 +962,7 @@ public class FutureTest extends AbstractValueTest {
 
     @Test
     public void shouldRecoverFailedFutureWithSpecificCause() {
-        final Future<Integer> recovered = Future.<Integer> of(zZz(new Error())).recover(Error.class, t -> 42);
+        final Future<Integer> recovered = Future.<Integer>of(zZz(new Error())).recover(Error.class, t -> 42);
         waitUntil(recovered::isCompleted);
         assertThat(recovered.isSuccess()).isTrue();
         assertThat(recovered.get()).isEqualTo(42);
@@ -962,14 +970,14 @@ public class FutureTest extends AbstractValueTest {
 
     @Test
     public void shouldNotRecoverFailedFutureWithMismatchingCause() {
-        final Future<Integer> recovered = Future.<Integer> of(zZz(new Error())).recover(ArithmeticException.class, t -> 42);
+        final Future<Integer> recovered = Future.<Integer>of(zZz(new Error())).recover(ArithmeticException.class, t -> 42);
         waitUntil(recovered::isCompleted);
         assertThat(recovered.isFailure()).isTrue();
     }
 
     @Test
     public void shouldNotCrashWhenRecoverFails() {
-        final Future<Integer> recovered = Future.<Integer> of(zZz(new Error())).recover(t -> {
+        final Future<Integer> recovered = Future.<Integer>of(zZz(new Error())).recover(t -> {
             throw new ArithmeticException();
         });
         waitUntil(recovered::isCompleted);
@@ -979,7 +987,7 @@ public class FutureTest extends AbstractValueTest {
 
     @Test
     public void shouldNotCrashWhenRecoverFailsWithSpecificCause() {
-        final Future<Integer> recovered = Future.<Integer> of(zZz(new Error())).recover(Error.class, t -> {
+        final Future<Integer> recovered = Future.<Integer>of(zZz(new Error())).recover(Error.class, t -> {
             throw new ArithmeticException();
         });
         waitUntil(recovered::isCompleted);
@@ -991,7 +999,9 @@ public class FutureTest extends AbstractValueTest {
 
     @Test
     public void shouldRecoverFailedFutureWithFuture() {
-        final Future<String> recovered = Future.<String> of(() -> { throw new Error("oh!"); })
+        final Future<String> recovered = Future.<String>of(() -> {
+                    throw new Error("oh!");
+                })
                 .recoverWith(x -> Future.of(x::getMessage));
         waitUntil(recovered::isCompleted);
         assertThat(recovered.isSuccess()).isTrue();
@@ -1018,7 +1028,7 @@ public class FutureTest extends AbstractValueTest {
 
     @Test
     public void shouldConvertFailedFutureToCompletableFuture() {
-        final CompletableFuture<Integer> completableFuture = Future.<Integer> failed(new RuntimeException()).toCompletableFuture();
+        final CompletableFuture<Integer> completableFuture = Future.<Integer>failed(new RuntimeException()).toCompletableFuture();
         assertThat(completableFuture.isCompletedExceptionally());
         assertThat(Try.of(completableFuture::get).getCause()).isExactlyInstanceOf(ExecutionException.class);
     }
@@ -1117,7 +1127,7 @@ public class FutureTest extends AbstractValueTest {
 
     @Test
     public void shouldZipFailure() {
-        final Future<Tuple2<Integer, Integer>> future = Future.<Integer> of(zZz(new Error())).zip(Future.of(zZz(2)));
+        final Future<Tuple2<Integer, Integer>> future = Future.<Integer>of(zZz(new Error())).zip(Future.of(zZz(2)));
         future.await();
         waitUntil(future::isFailure);
         assertThat(future.getCause().get().getClass()).isEqualTo(Error.class);
@@ -1135,7 +1145,7 @@ public class FutureTest extends AbstractValueTest {
 
     @Test
     public void shouldZipWithFailure() {
-        final Future<List<Integer>> future = Future.<Integer> of(zZz(new Error())).zipWith(Future.of(zZz(2)), List::of);
+        final Future<List<Integer>> future = Future.<Integer>of(zZz(new Error())).zipWith(Future.of(zZz(2)), List::of);
         future.await();
         waitUntil(future::isFailure);
         assertThat(future.getCause().get().getClass()).isEqualTo(Error.class);
@@ -1181,7 +1191,7 @@ public class FutureTest extends AbstractValueTest {
 
     @Test
     public void shouldPeekFuture() {
-        final int[] consumer = new int[] { -1 };
+        final int[] consumer = new int[]{-1};
         Future.of(zZz(42)).peek(i -> consumer[0] = i);
         waitUntil(() -> consumer[0] > 0);
         assertThat(consumer[0]).isEqualTo(42);
@@ -1212,7 +1222,7 @@ public class FutureTest extends AbstractValueTest {
 
     @Test
     public void shouldMapWhenCrashingDuringFutureComputation() {
-        final Future<String> testee = Future.<Integer> of(zZz(new Error())).map(Object::toString);
+        final Future<String> testee = Future.<Integer>of(zZz(new Error())).map(Object::toString);
         testee.await();
         assertFailed(testee, Error.class);
     }
@@ -1237,7 +1247,7 @@ public class FutureTest extends AbstractValueTest {
 
     @Test
     public void shouldMapTryWhenCrashingDuringFutureComputation() {
-        final Future<String> testee = Future.<Integer> of(zZz(new Error())).mapTry(Object::toString);
+        final Future<String> testee = Future.<Integer>of(zZz(new Error())).mapTry(Object::toString);
         testee.await();
         assertFailed(testee, Error.class);
     }
@@ -1279,7 +1289,7 @@ public class FutureTest extends AbstractValueTest {
     }
 
     private static Future<Void> blocking(CheckedRunnable computation) {
-        return blocking(() ->  {
+        return blocking(() -> {
             computation.run();
             return null;
         });
@@ -1291,15 +1301,17 @@ public class FutureTest extends AbstractValueTest {
             final AtomicReference<Throwable> errorRef = new AtomicReference<>(null);
             ForkJoinPool.managedBlock(new ForkJoinPool.ManagedBlocker() {
                 boolean releasable = false;
+
                 @Override
                 public boolean block() {
                     try {
                         result.set(computation.apply());
-                    } catch(Throwable x) {
+                    } catch (Throwable x) {
                         errorRef.set(x);
                     }
                     return releasable = true;
                 }
+
                 @Override
                 public boolean isReleasable() {
                     return releasable;

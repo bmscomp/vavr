@@ -40,10 +40,10 @@ public abstract class AbstractMultimapTest extends AbstractTraversableTest {
 
     @Parameterized.Parameters
     public static Collection<Object[]> data() {
-        return asList(new Object[][] {
-                { Multimap.ContainerType.SEQ },
-                { Multimap.ContainerType.SET },
-                { Multimap.ContainerType.SORTED_SET }
+        return asList(new Object[][]{
+                {Multimap.ContainerType.SEQ},
+                {Multimap.ContainerType.SET},
+                {Multimap.ContainerType.SORTED_SET}
         });
     }
 
@@ -55,18 +55,17 @@ public abstract class AbstractMultimapTest extends AbstractTraversableTest {
         return new IterableAssert<T>(actual) {
             @Override
             public IterableAssert<T> isEqualTo(Object obj) {
-                @SuppressWarnings("unchecked")
-                final Iterable<T> expected = (Iterable<T>) obj;
+                @SuppressWarnings("unchecked") final Iterable<T> expected = (Iterable<T>) obj;
                 final java.util.Map<T, Integer> actualMap = countMap(actual);
                 final java.util.Map<T, Integer> expectedMap = countMap(expected);
-                assertThat(actualMap.size()).isEqualTo(expectedMap.size());
-                actualMap.forEach((k, v) -> assertThat(v).isEqualTo(expectedMap.get(k)));
+                AbstractMultimapTest.this.assertThat(actualMap.size()).isEqualTo(expectedMap.size());
+                actualMap.forEach((k, v) -> AbstractMultimapTest.this.assertThat(v).isEqualTo(expectedMap.get(k)));
                 return this;
             }
 
             private java.util.Map<T, Integer> countMap(Iterable<? extends T> it) {
                 final java.util.HashMap<T, Integer> cnt = new java.util.HashMap<>();
-                it.forEach(i -> cnt.merge(i, 1, (v1, v2) -> v1 + v2));
+                it.forEach(i -> cnt.merge(i, 1, Integer::sum));
                 return cnt;
             }
         };
@@ -303,27 +302,27 @@ public abstract class AbstractMultimapTest extends AbstractTraversableTest {
     @Test
     public void shouldConstructFromEntries() {
         final Multimap<String, Integer> map = mapOfEntries(entry("1", 1), entry("2", 2), entry("3", 3));
-        assertThat(map).isEqualTo(this.<String, Integer> emptyMap().put("1", 1).put("2", 2).put("3", 3));
+        assertThat(map).isEqualTo(this.<String, Integer>emptyMap().put("1", 1).put("2", 2).put("3", 3));
     }
 
     @Test
     public void shouldConstructFromPairs() {
         final Multimap<String, Integer> map = mapOfPairs("1", 1, "2", 2, "3", 3);
-        assertThat(map).isEqualTo(this.<String, Integer> emptyMap().put("1", 1).put("2", 2).put("3", 3));
+        assertThat(map).isEqualTo(this.<String, Integer>emptyMap().put("1", 1).put("2", 2).put("3", 3));
     }
 
     @Test
     public void shouldConstructFromJavaStream() {
         final java.util.stream.Stream<Integer> javaStream = java.util.stream.Stream.of(1, 2, 3);
         final Multimap<String, Integer> map = mapOf(javaStream, String::valueOf, Function.identity());
-        assertThat(map).isEqualTo(this.<String, Integer> emptyMap().put("1", 1).put("2", 2).put("3", 3));
+        assertThat(map).isEqualTo(this.<String, Integer>emptyMap().put("1", 1).put("2", 2).put("3", 3));
     }
 
     @Test
     public void shouldConstructFromJavaStreamEntries() {
         final java.util.stream.Stream<Integer> javaStream = java.util.stream.Stream.of(1, 2, 3);
         final Multimap<String, Integer> map = mapOf(javaStream, i -> Tuple.of(String.valueOf(i), i));
-        assertThat(map).isEqualTo(this.<String, Integer> emptyMap().put("1", 1).put("2", 2).put("3", 3));
+        assertThat(map).isEqualTo(this.<String, Integer>emptyMap().put("1", 1).put("2", 2).put("3", 3));
     }
 
     @Test
@@ -332,7 +331,7 @@ public abstract class AbstractMultimapTest extends AbstractTraversableTest {
         source.put("1", 2);
         source.put("3", 4);
         final Multimap<String, Integer> map = mapOf(source);
-        assertThat(map).isEqualTo(this.<String, Integer> emptyMap().put("1", 2).put("3", 4));
+        assertThat(map).isEqualTo(this.<String, Integer>emptyMap().put("1", 2).put("3", 4));
     }
 
     // -- asPartialFunction
@@ -407,7 +406,7 @@ public abstract class AbstractMultimapTest extends AbstractTraversableTest {
 
     @Override
     public void shouldComputeDistinctOfNonEmptyTraversable() {
-        final Multimap<Integer, Object> testee = this.<Integer, Object> emptyMap().put(1, 1).put(2, 2).put(3, 3);
+        final Multimap<Integer, Object> testee = this.<Integer, Object>emptyMap().put(1, 1).put(2, 2).put(3, 3);
         assertThat(testee.distinct()).isEqualTo(testee);
     }
 
@@ -419,8 +418,8 @@ public abstract class AbstractMultimapTest extends AbstractTraversableTest {
         // sequential collections
         assertThat(emptyMap().equals(HashMultimap.withSeq().empty())).isTrue();
         assertThat(mapOf(1, "a").equals(HashMultimap.withSeq().of(1, "a"))).isTrue();
-        assertThat(mapOfPairs(1, "a", 2, "b", 3, "c").equals(HashMultimap.withSeq().of(1, "a", 2, "b",3, "c"))).isTrue();
-        assertThat(mapOfPairs(1, "a", 2, "b", 3, "c").equals(HashMultimap.withSeq().of(3, "c", 2, "b",1, "a"))).isTrue();
+        assertThat(mapOfPairs(1, "a", 2, "b", 3, "c").equals(HashMultimap.withSeq().of(1, "a", 2, "b", 3, "c"))).isTrue();
+        assertThat(mapOfPairs(1, "a", 2, "b", 3, "c").equals(HashMultimap.withSeq().of(3, "c", 2, "b", 1, "a"))).isTrue();
 
         // other classes
         assertThat(empty().equals(io.vavr.collection.List.empty())).isFalse();
@@ -531,7 +530,7 @@ public abstract class AbstractMultimapTest extends AbstractTraversableTest {
     @Test
     public void forEachByKeyValue() {
         final Multimap<Integer, Integer> map = mapOf(1, 2).put(3, 4);
-        final int[] result = { 0 };
+        final int[] result = {0};
         map.forEach((k, v) -> result[0] += k + v);
         assertThat(result[0]).isEqualTo(10);
     }
@@ -539,7 +538,7 @@ public abstract class AbstractMultimapTest extends AbstractTraversableTest {
     @Test
     public void forEachByTuple() {
         final Multimap<Integer, Integer> map = mapOf(1, 2).put(3, 4);
-        final int[] result = { 0 };
+        final int[] result = {0};
         map.forEach(t -> result[0] += t._1 + t._2);
         assertThat(result[0]).isEqualTo(10);
     }
@@ -558,8 +557,8 @@ public abstract class AbstractMultimapTest extends AbstractTraversableTest {
     @Test
     public void shouldNonNilGroupByIdentity() {
         final Map<?, ?> actual = of('a', 'b', 'c').groupBy(Function.identity());
-        final Map<?, ?> expected = LinkedHashMap.empty().put('a', mapOf(0, 'a')).put('b', mapOf(1,'b'))
-                .put('c', mapOf(2,'c'));
+        final Map<?, ?> expected = LinkedHashMap.empty().put('a', mapOf(0, 'a')).put('b', mapOf(1, 'b'))
+                .put('c', mapOf(2, 'c'));
         assertThat(actual).isEqualTo(expected);
     }
 
@@ -913,11 +912,11 @@ public abstract class AbstractMultimapTest extends AbstractTraversableTest {
     @SuppressWarnings("unchecked")
     public void shouldSpanAndNotTruncate() {
         assertThat(of(1, 1, 2, 2, 3, 3).span(x -> x % 2 == 1))
-                .isEqualTo(Tuple.of(mapOfTuples(Tuple.of(0,1), Tuple.of(1, 1)),
+                .isEqualTo(Tuple.of(mapOfTuples(Tuple.of(0, 1), Tuple.of(1, 1)),
                         mapOfTuples(Tuple.of(2, 2), Tuple.of(3, 2),
                                 Tuple.of(4, 3), Tuple.of(5, 3))));
         assertThat(of(1, 1, 2, 2, 4, 4).span(x -> x == 1))
-                .isEqualTo(Tuple.of(mapOfTuples(Tuple.of(0,1), Tuple.of(1, 1)),
+                .isEqualTo(Tuple.of(mapOfTuples(Tuple.of(0, 1), Tuple.of(1, 1)),
                         mapOfTuples(Tuple.of(2, 2), Tuple.of(3, 2),
                                 Tuple.of(4, 4), Tuple.of(5, 4))));
     }
@@ -1100,7 +1099,7 @@ public abstract class AbstractMultimapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldZipAllNonNilsIfThisIsSmaller() {
-        final Seq<Tuple2<Tuple2<Integer, Object>, String>> actual = this.<Integer, Object> emptyMap()
+        final Seq<Tuple2<Tuple2<Integer, Object>, String>> actual = this.<Integer, Object>emptyMap()
                 .put(1, 1)
                 .put(2, 2)
                 .zipAll(of("a", "b", "c"), Tuple.of(9, 10), "z");
@@ -1111,7 +1110,7 @@ public abstract class AbstractMultimapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldZipAllNonNilsIfThisIsMoreSmaller() {
-        final Seq<Tuple2<Tuple2<Integer, Object>, String>> actual = this.<Integer, Object> emptyMap()
+        final Seq<Tuple2<Tuple2<Integer, Object>, String>> actual = this.<Integer, Object>emptyMap()
                 .put(1, 1)
                 .put(2, 2)
                 .zipAll(of("a", "b", "c", "d"), Tuple.of(9, 10), "z");
@@ -1122,7 +1121,7 @@ public abstract class AbstractMultimapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldZipAllNonNilsIfThatIsSmaller() {
-        final Seq<Tuple2<Tuple2<Integer, Object>, String>> actual = this.<Integer, Object> emptyMap()
+        final Seq<Tuple2<Tuple2<Integer, Object>, String>> actual = this.<Integer, Object>emptyMap()
                 .put(1, 1)
                 .put(2, 2)
                 .put(3, 3)
@@ -1134,7 +1133,7 @@ public abstract class AbstractMultimapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldZipAllNonNilsIfThatIsMoreSmaller() {
-        final Seq<Tuple2<Tuple2<Integer, Object>, String>> actual = this.<Integer, Object> emptyMap()
+        final Seq<Tuple2<Tuple2<Integer, Object>, String>> actual = this.<Integer, Object>emptyMap()
                 .put(1, 1)
                 .put(2, 2)
                 .put(3, 3)
@@ -1147,7 +1146,7 @@ public abstract class AbstractMultimapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldZipAllNonNilsOfSameSize() {
-        final Seq<Tuple2<Tuple2<Integer, Object>, String>> actual = this.<Integer, Object> emptyMap()
+        final Seq<Tuple2<Tuple2<Integer, Object>, String>> actual = this.<Integer, Object>emptyMap()
                 .put(1, 1)
                 .put(2, 2)
                 .put(3, 3)

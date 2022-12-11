@@ -39,18 +39,17 @@ public class HashSetTest extends AbstractSetTest {
         return new IterableAssert<T>(actual) {
             @Override
             public IterableAssert<T> isEqualTo(Object obj) {
-                @SuppressWarnings("unchecked")
-                final Iterable<T> expected = (Iterable<T>) obj;
+                @SuppressWarnings("unchecked") final Iterable<T> expected = (Iterable<T>) obj;
                 final java.util.Map<T, Integer> actualMap = countMap(actual);
                 final java.util.Map<T, Integer> expectedMap = countMap(expected);
-                assertThat(actualMap.size()).isEqualTo(expectedMap.size());
-                actualMap.keySet().forEach(k -> assertThat(actualMap.get(k)).isEqualTo(expectedMap.get(k)));
+                HashSetTest.this.assertThat(actualMap.size()).isEqualTo(expectedMap.size());
+                actualMap.keySet().forEach(k -> HashSetTest.this.assertThat(actualMap.get(k)).isEqualTo(expectedMap.get(k)));
                 return this;
             }
 
             private java.util.Map<T, Integer> countMap(Iterable<? extends T> it) {
                 final java.util.HashMap<T, Integer> cnt = new java.util.HashMap<>();
-                it.forEach(i -> cnt.merge(i, 1, (v1, v2) -> v1 + v2));
+                it.forEach(i -> cnt.merge(i, 1, Integer::sum));
                 return cnt;
             }
         };
@@ -300,7 +299,7 @@ public class HashSetTest extends AbstractSetTest {
 
     @Test
     public void shouldZipNilWithIndex() {
-        assertThat(this.<String> empty().zipWithIndex()).isEqualTo(this.<Tuple2<String, Integer>> empty());
+        assertThat(this.<String>empty().zipWithIndex()).isEqualTo(this.<Tuple2<String, Integer>>empty());
     }
 
     @Test
